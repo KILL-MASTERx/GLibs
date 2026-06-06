@@ -1,6 +1,6 @@
 # </> GlobalCode 
 # Glib - source: log.py logger
-# 1.0.0-rc1
+# 1.0.0-rc1 
 
 import os
 from datetime import datetime
