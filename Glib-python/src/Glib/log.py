@@ -1,10 +1,10 @@
 # </> GlobalCode 
 # Glib - source: log.py logger
-# 1.0.0-rc2
+# 1.0.0-release 
 
 import os #TODO: заменить на свой модуль для работы с фс
 from datetime import datetime
-from colorama import Fore, Back, Style, init
+from colorama import Fore, Style, init
 import re
 
 #ALL LOG TYPES
@@ -30,27 +30,24 @@ class LogInit:
         date = datetime.now().strftime("%Y-%m-%d")
         return self.filemask.replace("{date}", date)
 
-    def _write_file(self, text):
+    def _write_file(self, text, path, filename, encoding):
         try:
-            if not os.path.exists(self.dir):
-                os.makedirs(self.dir)
+            if not os.path.exists(path):
+                os.makedirs(path)
 
-            if self.filename == None:
+            if filename is None:
                 self.filename = self.filename_create()
+                filename = self.filename
 
-            file_path = os.path.join(self.dir, self.filename)
+            file_path = os.path.join(path, filename)
 
-            with open(file_path, "a", encoding=self.encoding) as f:
+            with open(file_path, "a", encoding=encoding) as f:
                 f.write(text + "\n")
         except Exception as e:
-            self.whoami = "Glibs-LOG"
-            self.level = 0
-            self.dir = "./Glib_E/"
-            self.filename = "log.py-ERROR.log"
-            self.console_output = True
-            self.write_file = False #так как ошибка произошла в функции записи
-            self.encoding = "utf-8"
-            self.Lprint(f"{e}", 3)
+            self.write_file = False
+            self._Lsystem_error(f"{e}", 3, "log.py-ERROR.log")
+            exit(3)
+
 
     def VCTIT(self, CodeType): # Validity check and translation into text
         match CodeType:
@@ -64,27 +61,29 @@ class LogInit:
                 return Fore.RED + "ERROR"
             case _:
                 return False
+        return False
 
     def Lprint(self, message, CodeType=0): # Log print
         LogTypeName = self.VCTIT(CodeType)
 
         if (not LogTypeName) or (not self.VCTIT(self.level)):
             if CodeType != -1 or self.level != -1:
-                self.whoami = "Glibs-LOG"
-                self.level = 0
-                self.dir = "./Glib_E/"
-                self.filename = "log.py-ERROR.log"
-                self.console_output = False
-                self.write_file = True
-                self.encoding = "utf-8"
-                self.Lprint(f"CodeType({CodeType}) or level({self.level}) - Not supported type", 2)
+                self._Lsystem_error(f"CodeType({CodeType}) or level({self.level}) - Not supported type", 2, "log.py-ERROR.log")
             return
 
         if (CodeType >= self.level) and (self.console_output):
-            print(f"{Style.BRIGHT + self.whoami + Style.RESET_ALL}: [{LogTypeName + Style.RESET_ALL}] - {message}") 
+            print(f"{Style.RESET_ALL}{Style.BRIGHT + self.whoami + Style.RESET_ALL}: [{LogTypeName + Style.RESET_ALL}] - {message}{Style.RESET_ALL}") 
 
         if self.write_file:
-            self._write_file(re.sub(r'\x1b\[[0-9;]*m', '', f"[{datetime.now().strftime('%H:%M:%S')}] [{LogTypeName}] {self.whoami}: {message}"))
+            self._write_file(re.sub(r'\x1b\[[0-9;]*m', '', f"[{datetime.now().strftime('%H:%M:%S')}] [{LogTypeName}] {self.whoami}: {message}"), self.dir, self.filename, self.encoding)
+
+    def _Lsystem_error(self, msg, CodeType, fileN):
+        path = "./Glib_E/"
+        print(f"{Style.RESET_ALL}{Style.BRIGHT}Glibs-LOG{Style.RESET_ALL}: [{self.VCTIT(CodeType) + Style.RESET_ALL}] - {msg}{Style.RESET_ALL}")
+        if self.write_file:
+            self._write_file(re.sub(r'\x1b\[[0-9;]*m', '', f"[{datetime.now().strftime('%H:%M:%S')}] [{self.VCTIT(CodeType)}] Glibs-LOG: {msg}"), path, fileN, "utf-8")
+
+
 def main_help():
     print("""log.py - удобное логирование
 Пример использования:
